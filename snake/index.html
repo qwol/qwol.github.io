@@ -1,8 +1,10 @@
 <!DOCTYPE HTML>
-<html>
+<html lang="en">
     <head>
+		    <meta charset="utf-8">
+		    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+		    <meta name="viewport" content="width=device-width, initial-scale=1">
         <title>The Snake</title>
-        <META charset = "utf-8">
 		<style>
 		
 		#example, body{
@@ -65,21 +67,7 @@
 				context.fill();
 			}
 		}
-		/*
-		function PieceOfSnake(x, y){
-			this.x = x;
-			this.y = y;
-			this.radius = radiusMain;
-			this.color = '#888888';
-			this.pieceElementDraw = function(){
-				context.beginPath();
-				context.arc(this.x,this.y,this.radius,0,2*Math.PI);
-				context.fillStyle = this.color;
-				context.fill();
-			}
-		}
-		*/
-		
+
 		// Функция рисующая на холсте
 		function draw() {
 			var now = Date.now();
