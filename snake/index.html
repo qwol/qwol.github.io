@@ -1,0 +1,260 @@
+<!DOCTYPE HTML>
+<html>
+    <head>
+        <title>The Snake</title>
+        <META charset = "utf-8">
+		<style>
+		
+		#example, body{
+			margin:10px 0px;
+			padding:0;
+			border-radius:10px;
+		}
+		</style>
+        <script>
+		var currentCourseX = 0;
+		var currentCourseY = 0;
+		var snake = [];
+		var food = [];
+		var pieces = [];
+		var lastTime;
+		var dt;
+		var colorMain = '#aFFFaF';
+		var timeLoop = 1;
+		var BASESPEED = 0.5;
+		var radiusMain = 10;
+		var snakeStep = 2 * radiusMain;
+		var MAINWIDTH = 2 * radiusMain * 20;
+		var MAINHEIGHT = 2 * radiusMain * 20;
+		
+		var requestAnimFrame = (function(){
+		return window.requestAnimationFrame       ||
+        window.webkitRequestAnimationFrame ||
+        window.mozRequestAnimationFrame    ||
+        window.oRequestAnimationFrame      ||
+        window.msRequestAnimationFrame     ||
+        function(callback){
+            window.setTimeout(callback, 1000 / 60);
+        };
+		})();	
+		//конструктор фрагментов змеи
+		function SnakeElement(x,y,courseX,courseY,color){
+			this.x = x;
+			this.y = y;
+			this.courseX = courseX;
+			this.courseY = courseY;
+			this.radius = radiusMain;
+			this.color = color;
+			this.snakeElementDraw = function(){
+				context.beginPath();
+				context.arc(this.x,this.y,this.radius,0,2*Math.PI);
+				context.fillStyle = this.color;
+				context.fill();
+			}
+		}
+		//конструктор еды
+		function FoodElement(){
+			this.x = getRandomPoint().x;
+			this.y = getRandomPoint().y;
+			this.radius = radiusMain;
+			this.color = '#00FF00';
+			this.foodElementDraw = function(){
+				context.beginPath();
+				context.arc(this.x,this.y,this.radius,0,2*Math.PI);
+				context.fillStyle = this.color;
+				context.fill();
+			}
+		}
+		/*
+		function PieceOfSnake(x, y){
+			this.x = x;
+			this.y = y;
+			this.radius = radiusMain;
+			this.color = '#888888';
+			this.pieceElementDraw = function(){
+				context.beginPath();
+				context.arc(this.x,this.y,this.radius,0,2*Math.PI);
+				context.fillStyle = this.color;
+				context.fill();
+			}
+		}
+		*/
+		
+		// Функция рисующая на холсте
+		function draw() {
+			var now = Date.now();
+			dt = (now - lastTime) / 1000;
+			lastTime = now;
+			timeLoop = isNaN(dt) ? timeLoop : (timeLoop + dt);
+			if (timeLoop >= BASESPEED * Math.pow(0.95, snake.length)){
+				snake[0].courseX = currentCourseX;
+				snake[0].courseY = currentCourseY;
+				snakeMove();
+				checkSmash();
+				checkFeed();
+				timeLoop = 0;
+			}
+			//фон
+			context.fillStyle = colorMain;
+			context.fillRect(0, 0, canvas.width, canvas.height);
+			if (pieces.length > 0){
+				piecesDraw();
+			}		
+			foodDraw();
+			snakeDraw();
+			requestAnimFrame(draw);
+		}
+		// при нажатии клавиши
+		function keydown(evt) {
+			var buttonKeyCode = evt.keyCode;
+			switch(buttonKeyCode){
+				case 37:
+					currentCourseX = (snake[0].courseX == 1) ? currentCourseX : -1;
+					currentCourseY = (snake[0].courseX == 1) ? currentCourseY : 0;
+				break;
+				case 38:
+					currentCourseX = (snake[0].courseY == 1) ? currentCourseX : 0;
+					currentCourseY = (snake[0].courseY == 1) ? currentCourseY : -1;
+				break;
+				case 39:
+					currentCourseX = (snake[0].courseX == -1) ? currentCourseX : 1;
+					currentCourseY = (snake[0].courseX == -1) ? currentCourseY : 0;
+				break;
+				case 40:
+					currentCourseX = (snake[0].courseY == -1) ? currentCourseX : 0;
+					currentCourseY = (snake[0].courseY == -1) ? currentCourseY : 1;
+				break;
+				default:;
+			}
+		}
+		//Инициализация парамеетров
+		function init() {
+			canvas = document.getElementById("example");
+			context = canvas.getContext("2d");
+			//Устанавливаем размер холста
+			canvas.width = MAINWIDTH;
+			canvas.height = MAINHEIGHT;
+			canvas.style.marginLeft= (((document.body.clientWidth/2)-(canvas.width/2)) > 0) ? (((document.body.clientWidth/2)-(canvas.width/2)) + 'px') : '0px';
+			//Создаем первый фрагмент змеи
+			snake.unshift(new SnakeElement(getRandomPoint().x, getRandomPoint().y,0,0, '#FF4444'));
+			foodAddElement();
+			
+			requestAnimFrame(draw);
+		}	
+		
+		function snakeDraw(){
+			for(var i in snake){
+				snake[i].snakeElementDraw();
+			}
+		}
+		function foodDraw(){
+			for(var i in food){
+				food[i].foodElementDraw();
+			}
+		}
+		function piecesDraw(){
+			for(var i in pieces){
+				if (pieces[i].radius < 1){
+					pieces.splice(i,1);
+				}
+				else {			
+					pieces[i].snakeElementDraw();
+					pieces[i].radius *= 0.9;
+				}
+			}
+		}
+		function snakeMove(){
+			var i = snake.length - 1;
+			while(i >= 0){
+				snake[i].x += snakeStep * snake[i].courseX;
+				if ((snake[i].x > MAINWIDTH)||(snake[i].x < 0)){
+					snake[i].x = (snake[i].x < 0) ? (MAINWIDTH - snake[i].radius) : (snake[i].radius);
+				}
+				snake[i].y += snakeStep * snake[i].courseY;
+				if ((snake[i].y > MAINHEIGHT)||(snake[i].y < 0)){
+					snake[i].y = (snake[i].y < 0) ? (MAINHEIGHT - snake[i].radius) : (snake[i].radius);
+				}
+				if (snake[i-1]){
+					snake[i].courseX = snake[i-1].courseX;
+					snake[i].courseY = snake[i-1].courseY;
+				} 
+				i--;
+			}
+		}
+		function snakeAddElement(){
+			var lastX = snake[snake.length-1].x;
+			var lastY = snake[snake.length-1].y
+			var lastCourseX = snake[snake.length-1].courseX;
+			var lastCourseY = snake[snake.length-1].courseY;
+			var offset = radiusMain * 2;
+			var color = '#000000';
+			snake.push(new SnakeElement((lastX - offset * lastCourseX), (lastY - offset * lastCourseY), lastCourseX, lastCourseY, color));
+		}
+		
+		function foodAddElement(){
+			food.push(new FoodElement());
+		}
+		
+		function getRandomInt(min, max){
+			return Math.floor(Math.random() * (max - min + 1)) + min;
+		}
+		function getRandomPoint(min, max){
+			var x = 0;
+			var y = 0;
+			var obj = {};
+			var busy = true;
+			while(busy){
+				x = (getRandomInt(1, (MAINWIDTH / (2 * radiusMain))) * radiusMain * 2) - radiusMain;
+				y = (getRandomInt(1, (MAINHEIGHT / (2 * radiusMain))) * radiusMain * 2) - radiusMain;
+				obj = {'x':x, 'y':y};
+				for (f in food){if((food[f].x == x)&&(food[f].y == y)) continue;}
+				for (s in snake){if((snake[s].x == x)&&(snake[s].y == y)) continue;}
+				busy = false;
+			}
+			return obj;
+		}
+		function isSmash(obj1, obj2){
+			if ((obj1.x == obj2.x)&&(obj1.y == obj2.y)){
+				return true;
+			} else return false;
+		}
+		function checkSmash(){
+			for (i in snake){
+				if ((i > 0)&&(isSmash(snake[0], snake[i]))){
+					cutTheSnake(snake.length,i);
+					break;
+				}
+			}
+		}
+		function checkFeed(){
+			for (f in food){
+				for (s in snake){
+					if (isSmash(snake[s], food[f])){
+						food.splice(f,1);
+						snakeAddElement();
+						foodAddElement();
+					}
+				}
+			}
+		}
+		function cutTheSnake(len, number){
+			var n = len - number + 1;
+			console.log('snake.slice = ' + snake.slice(number));
+			var p = snake.slice(number);
+			for( var i in p){
+				pieces.push(p[i]);
+			}
+			snake.splice(number, n);
+			console.log('pieces = ' + pieces);
+		}
+		
+		//меняем положение холста при изменении размера окна
+		window.onresize = function (){
+			 canvas.style.marginLeft= (((document.body.clientWidth/2)-(canvas.width/2)) > 0) ? (((document.body.clientWidth/2)-(canvas.width/2)) + 'px') : '0px';
+		}
+    </script>
+    </head>
+    <body onload="init()" onkeydown='keydown(event)'>
+        <canvas id="example" > </canvas>
+    </body>
+</html>
